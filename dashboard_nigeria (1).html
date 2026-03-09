@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Macroeconómico — Nigeria</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0d0f0e;
+    --surface: #141714;
+    --border: #2a2e2b;
+    --green: #4ade80;
+    --amber: #fbbf24;
+    --red: #f87171;
+    --blue: #60a5fa;
+    --text: #e8ede9;
+    --muted: #7a8a7c;
+    --accent: #4ade80;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+    padding: 10mm 12mm;
+    font-size: 9px;
+  }
+
+  /* HEADER */
+  .header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+    margin-bottom: 8px;
+  }
+  .country-block { display: flex; align-items: center; gap: 10px; }
+  .flag {
+    width: 36px; height: 24px;
+    display: flex; flex-direction: column;
+    border: 1px solid #333; overflow: hidden; border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .flag-green { background: #008751; flex: 1; }
+  .flag-white { background: #fff; flex: 1; }
+  .flag-green2 { background: #008751; flex: 1; }
+
+  .country-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    color: var(--text);
+    line-height: 1;
+  }
+  .country-sub {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 7.5px;
+    color: var(--muted);
+    margin-top: 2px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .meta-block { text-align: right; }
+  .meta-block p {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 7px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .meta-block .highlight { color: var(--green); }
+
+  /* GRID LAYOUT */
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 7px;
+  }
+
+  /* CHART CARDS */
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 10px 6px;
+    position: relative;
+  }
+  .chart-card.full-width {
+    grid-column: 1 / -1;
+  }
+  .card-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 6.5px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 2px;
+  }
+  .card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 1px;
+  }
+  .card-unit {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 6px;
+    color: var(--muted);
+    margin-bottom: 5px;
+  }
+  .chart-container { position: relative; height: 80px; }
+
+  /* STAT PILL */
+  .stat-pill {
+    position: absolute;
+    top: 8px; right: 10px;
+    background: rgba(74,222,128,0.08);
+    border: 1px solid rgba(74,222,128,0.2);
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 7px;
+    color: var(--green);
+  }
+  .stat-pill.red { background: rgba(248,113,113,0.08); border-color: rgba(248,113,113,0.2); color: var(--red); }
+  .stat-pill.amber { background: rgba(251,191,36,0.08); border-color: rgba(251,191,36,0.2); color: var(--amber); }
+
+  /* SUMMARY TABLE */
+  .table-card {
+    grid-column: 1 / 3;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 10px;
+  }
+  .table-card .card-title { font-size: 10px; margin-bottom: 6px; }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { border-bottom: 1px solid var(--border); }
+  th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 6.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    padding: 3px 4px;
+    text-align: center;
+    font-weight: 600;
+  }
+  th:first-child { text-align: left; }
+  td {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 7.5px;
+    padding: 3.5px 4px;
+    text-align: center;
+    border-bottom: 1px solid rgba(42,46,43,0.5);
+    color: var(--text);
+  }
+  td:first-child { text-align: left; color: var(--muted); font-size: 7px; }
+  .val-green { color: var(--green); font-weight: 600; }
+  .val-red { color: var(--red); font-weight: 600; }
+  .val-amber { color: var(--amber); font-weight: 600; }
+
+  /* HALLAZGOS */
+  .hallazgos-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--green);
+    border-radius: 4px;
+    padding: 8px 10px;
+  }
+  .hallazgos-card .card-title { font-size: 10px; margin-bottom: 6px; }
+  .bullet-list { list-style: none; }
+  .bullet-list li {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 7.5px;
+    color: var(--text);
+    line-height: 1.45;
+    padding: 3px 0;
+    border-bottom: 1px solid rgba(42,46,43,0.4);
+    padding-left: 10px;
+    position: relative;
+  }
+  .bullet-list li:last-child { border-bottom: none; }
+  .bullet-list li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--green);
+    font-size: 7px;
+  }
+  .bullet-list li strong {
+    color: var(--green);
+    font-weight: 600;
+  }
+  .bullet-list li em {
+    color: var(--amber);
+    font-style: normal;
+    font-weight: 600;
+  }
+
+  /* SOURCE NOTE */
+  .source-note {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 6px;
+    color: var(--muted);
+    margin-top: 3px;
+    opacity: 0.8;
+  }
+
+  /* DIVIDER */
+  .section-sep {
+    grid-column: 1 / -1;
+    height: 1px;
+    background: var(--border);
+    margin: 1px 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="country-block">
+    <div class="flag">
+      <div class="flag-green"></div>
+      <div class="flag-white"></div>
+      <div class="flag-green2"></div>
+    </div>
+    <div>
+      <div class="country-title">NIGERIA</div>
+      <div class="country-sub">Diagnóstico Macroeconómico · 2014–2024</div>
+    </div>
+  </div>
+  <div class="meta-block">
+    <p>Taller de Aplicación 1 — Macroeconomía</p>
+    <p>Pontificia Universidad Javeriana · Período 2610</p>
+    <p>Integrante: <span class="highlight">Miguel Angel Peña Cedeño</span></p>
+    <p>Fecha de entrega: <span class="highlight">09/03/2026</span></p>
+  </div>
+</div>
+
+<!-- DASHBOARD GRID -->
+<div class="dashboard-grid">
+
+  <!-- GRÁFICO 1: PIB -->
+  <div class="chart-card">
+    <div class="card-label">Gráfico 1</div>
+    <div class="card-title">Crecimiento del PIB Real</div>
+    <div class="card-unit">Variación anual (%) · Moneda constante</div>
+    <div class="stat-pill red">Mín: −6.4% (2020)</div>
+    <div class="chart-container">
+      <canvas id="gdpChart"></canvas>
+    </div>
+    <div class="source-note">Fuente: World Bank MFMOD/WDI · Consultado mar. 2026</div>
+  </div>
+
+  <!-- GRÁFICO 2: INFLACIÓN -->
+  <div class="chart-card">
+    <div class="card-label">Gráfico 2</div>
+    <div class="card-title">Inflación (IPC)</div>
+    <div class="card-unit">Variación anual (%) · Promedio del período</div>
+    <div class="stat-pill amber">Máx: 33.2% (2024)</div>
+    <div class="chart-container">
+      <canvas id="inflChart"></canvas>
+    </div>
+    <div class="source-note">Fuente: World Bank / Haver Analytics / IMF · Consultado mar. 2026</div>
+  </div>
+
+  <!-- GRÁFICO 3: DESEMPLEO -->
+  <div class="chart-card">
+    <div class="card-label">Gráfico 3</div>
+    <div class="card-title">Tasa de Desempleo</div>
+    <div class="card-unit">% de la fuerza laboral · Estimados ILO</div>
+    <div class="stat-pill">Máx: 5.7% (2020)</div>
+    <div class="chart-container">
+      <canvas id="unempChart"></canvas>
+    </div>
+    <div class="source-note">Fuente: World Bank WDI / ILO modelled estimates · Consultado mar. 2026</div>
+  </div>
+
+  <!-- TABLA RESUMEN -->
+  <div class="table-card">
+    <div class="card-title">Tabla Resumen — Últimos 5 Años (2020–2024)</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Variable</th>
+          <th>Promedio</th>
+          <th>Máximo</th>
+          <th>Año Máx.</th>
+          <th>Mínimo</th>
+          <th>Año Mín.</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>PIB real (% anual)</td>
+          <td>1.7</td>
+          <td class="val-green">4.3</td>
+          <td>2022</td>
+          <td class="val-red">−6.4</td>
+          <td>2020</td>
+        </tr>
+        <tr>
+          <td>Inflación IPC (% anual)</td>
+          <td>21.8</td>
+          <td class="val-red">33.2</td>
+          <td>2024</td>
+          <td class="val-green">13.2</td>
+          <td>2020</td>
+        </tr>
+        <tr>
+          <td>Desempleo (% fuerza lab.)</td>
+          <td>4.2</td>
+          <td class="val-amber">5.7</td>
+          <td>2020</td>
+          <td class="val-green">3.0</td>
+          <td>2024</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="source-note" style="margin-top:5px;">Fuente: World Bank MFMOD/WDI, ILO · Consultado mar. 2026 · <em>Nota: desempleo ILO subestima subempleo estructural (~18.5% en años recientes)</em></div>
+  </div>
+
+  <!-- HALLAZGOS CLAVE -->
+  <div class="hallazgos-card">
+    <div class="card-title">Hallazgos Clave</div>
+    <ul class="bullet-list">
+      <li>El PIB cayó <strong>−6.4% en 2020</strong>, la mayor contracción del período, por el shock de COVID-19 y el colapso del precio del petróleo.</li>
+      <li>La inflación se <em>cuadruplicó</em> entre <strong>2014 (8.1%)</strong> y <strong>2024 (33.2%)</strong>, impulsada por la devaluación del naira y la eliminación del subsidio a la gasolina en 2023.</li>
+      <li>La única recesión previa ocurrió en <strong>2016 (−1.8%)</strong>, asociada también a la caída de precios del petróleo y la restricción cambiaria del Banco Central.</li>
+      <li>El desempleo alcanzó su pico en <strong>2020 (5.7%)</strong> y descendió a <strong>3.0% en 2024</strong>, aunque el subempleo estructural supera el 18%.</li>
+      <li>La recuperación post-COVID fue débil: el PIB creció apenas <strong>1.1% en 2021</strong>, muy por debajo del crecimiento poblacional (~2.2%), implicando caída del PIB per cápita.</li>
+    </ul>
+  </div>
+
+</div><!-- end grid -->
+
+<script>
+const years = ['2014','2015','2016','2017','2018','2019','2020','2021','2022','2023','2024'];
+
+const gdpData    = [6.3, 2.7, -1.8, 0.4, 1.2, 1.0, -6.4, 1.1, 4.3, 3.3, 4.1];
+const inflData   = [8.1, 9.0, 15.7, 16.5, 12.1, 11.4, 13.2, 17.0, 18.8, 24.7, 33.2];
+const unempData  = [4.2, 4.3, 4.5, 4.8, 5.1, 5.2, 5.7, 5.5, 3.8, 3.1, 3.0];
+
+const baseOpts = (color, yLabel) => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      backgroundColor: '#1a1e1b',
+      titleColor: '#7a8a7c',
+      bodyColor: '#e8ede9',
+      borderColor: '#2a2e2b',
+      borderWidth: 1,
+      titleFont: { family: 'IBM Plex Mono', size: 9 },
+      bodyFont: { family: 'IBM Plex Mono', size: 9 },
+      callbacks: {
+        label: ctx => `  ${ctx.parsed.y.toFixed(1)}%`
+      }
+    }
+  },
+  scales: {
+    x: {
+      ticks: { color: '#7a8a7c', font: { family: 'IBM Plex Mono', size: 6.5 }, maxRotation: 0 },
+      grid: { color: 'rgba(42,46,43,0.4)' },
+      border: { color: '#2a2e2b' }
+    },
+    y: {
+      ticks: { color: '#7a8a7c', font: { family: 'IBM Plex Mono', size: 6.5 },
+               callback: v => v + '%' },
+      grid: { color: 'rgba(42,46,43,0.5)' },
+      border: { color: '#2a2e2b' }
+    }
+  }
+});
+
+// GDP Chart
+const gdpCtx = document.getElementById('gdpChart').getContext('2d');
+const gdpGrad = gdpCtx.createLinearGradient(0, 0, 0, 80);
+gdpGrad.addColorStop(0, 'rgba(74,222,128,0.25)');
+gdpGrad.addColorStop(1, 'rgba(74,222,128,0.0)');
+
+new Chart(gdpCtx, {
+  type: 'line',
+  data: {
+    labels: years,
+    datasets: [{
+      data: gdpData,
+      borderColor: '#4ade80',
+      borderWidth: 1.5,
+      backgroundColor: gdpGrad,
+      fill: true,
+      pointRadius: gdpData.map(v => v < 0 ? 4 : 2),
+      pointBackgroundColor: gdpData.map(v => v < 0 ? '#f87171' : '#4ade80'),
+      pointBorderColor: 'transparent',
+      tension: 0.3
+    }]
+  },
+  options: {
+    ...baseOpts('#4ade80'),
+    plugins: { ...baseOpts('#4ade80').plugins },
+    scales: {
+      ...baseOpts('#4ade80').scales,
+      y: {
+        ...baseOpts('#4ade80').scales.y,
+        suggestedMin: -8,
+        suggestedMax: 8
+      }
+    }
+  }
+});
+
+// Inflation Chart
+const inflCtx = document.getElementById('inflChart').getContext('2d');
+const inflGrad = inflCtx.createLinearGradient(0, 0, 0, 80);
+inflGrad.addColorStop(0, 'rgba(251,191,36,0.25)');
+inflGrad.addColorStop(1, 'rgba(251,191,36,0.0)');
+
+new Chart(inflCtx, {
+  type: 'line',
+  data: {
+    labels: years,
+    datasets: [{
+      data: inflData,
+      borderColor: '#fbbf24',
+      borderWidth: 1.5,
+      backgroundColor: inflGrad,
+      fill: true,
+      pointRadius: 2,
+      pointBackgroundColor: '#fbbf24',
+      pointBorderColor: 'transparent',
+      tension: 0.3
+    }]
+  },
+  options: baseOpts('#fbbf24')
+});
+
+// Unemployment Chart
+const unempCtx = document.getElementById('unempChart').getContext('2d');
+const unempGrad = unempCtx.createLinearGradient(0, 0, 0, 80);
+unempGrad.addColorStop(0, 'rgba(96,165,250,0.25)');
+unempGrad.addColorStop(1, 'rgba(96,165,250,0.0)');
+
+new Chart(unempCtx, {
+  type: 'line',
+  data: {
+    labels: years,
+    datasets: [{
+      data: unempData,
+      borderColor: '#60a5fa',
+      borderWidth: 1.5,
+      backgroundColor: unempGrad,
+      fill: true,
+      pointRadius: 2,
+      pointBackgroundColor: '#60a5fa',
+      pointBorderColor: 'transparent',
+      tension: 0.3
+    }]
+  },
+  options: {
+    ...baseOpts('#60a5fa'),
+    scales: {
+      ...baseOpts('#60a5fa').scales,
+      y: {
+        ...baseOpts('#60a5fa').scales.y,
+        suggestedMin: 0,
+        suggestedMax: 7
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>
